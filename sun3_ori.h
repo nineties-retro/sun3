@@ -1,0 +1,3 @@
+sun3_byte_instruction sun3_instr_ori_byte;
+sun3_word_instruction sun3_instr_ori_word;
+sun3_long_instruction sun3_instr_ori_long;

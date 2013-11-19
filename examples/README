@@ -1,0 +1,30 @@
+			     -*- Text -*-
+
+  calculator.s
+	A simple reverse polish calculator based on the sample
+	solution to exercise 5.8 in King&Knight.  Needs to be linked
+	against libkk.
+	
+  fact.s
+	A simple factorial program based on that given on page 80 of 
+	Gill&Corwin&Logar.  Needs to be linked against libkk
+
+  forth.s
+	Andy Valencia's 32-bit Forth-83 interpreter.  Original source
+        is availble as :-
+
+           http://www.complang.tuwien.ac.at/forth/ftp.dei.isep.ipp.pt/pub/forth/68000/forth-68000.tar.z
+
+         Minor syntactic have been made to make it acceptable to GNU as.
+
+  hanoi.s
+	A solution to the Towers of Hanoi problem based on the sample
+	answer to exercise exercise 4.8 in King&Knight.  Needs to be
+	linked against libkk.
+
+  libkk.s
+	Various library routines that are used by King&Knight in their
+	examples and sample answers.
+
+  ramtest.s
+	A simple RAM test based on that given on page 48 of King&Knight.

@@ -1,0 +1,1 @@
+sun3_long_instruction sun3_instr_neg_long;

@@ -1,0 +1,1 @@
+sun3_word_instruction sun3_instr_eor_word;

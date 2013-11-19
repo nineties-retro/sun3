@@ -1,0 +1,3 @@
+sun3_byte_instruction sun3_instr_subq_byte;
+sun3_byte_instruction sun3_instr_addq_byte;
+void sun3_instr_addq_or_subq_byte(sun3 *);

@@ -1,0 +1,219 @@
+INTRODUCTION
+   sun3 runs statically linked user-level Sun3 executable.
+
+HISTORY
+   For several years in the late 1980s I mainly worked on Sun 3/50.
+   Most of the programs were in C, but I did write some assembly
+   programs.  One was Conway's Game of Life where game area was the
+   Sun 3/50 frame buffer, It was milkdly amusing to rsh (ssh didn't
+   exist yet) to someone else's machine while they were working, run
+   it and watch their face as their screen evolved a way.
+
+   By the 1995 I no longer had access to a Sun 3 but in a fit of
+   nostalgia I decided I wanted to be able to run my old Sun3 68000
+   programs that I had carefully archived on tape (yes peopled used
+   tape in those days).  So I decided to write enough of Sun3 emulator
+   to do exactly that.  That meant a 68000 emulator, some Unix system
+   call emulation and a Sun 3/50 frame buffer emulator.
+
+   At the point where I had the 68000 emulator and minimal unix system
+   call emulation working well enough to run some trivial programs
+   (e.g. ./examples/calculator) and get a prompt to appear from Andy
+   Valencia's Forth (see ./examples/forth) it was time to implement
+   the Sun 3/50 frame buffer.  Since I didn't remember the exact
+   details (other than you have to open a device and mmap it) I
+   decided to look at my Game of Life code.  Unfortnately the tape
+   failed to read so I'd lost my old programs and the primary reason
+   for writing the Sun 3 emulator.  So, I stopped development at that
+   point.  The code here is essentially the code as it was when I
+   stopped work on it in 1995.  The main change was to simplify the
+   Makefile.  Originally it supported putting the objects and
+   dependencies in subdirectory whose name depended on the specific
+   configuration opttions.  This allowed having multiple builds active
+   which was useful since it took a while to build on 486 DX2-66 with
+   gcc, which is why it also had the option of building with lcc.
+   These days gcc only takes 3 seconds to build it on a an (old) 1 GHz
+   Core 2 so it is simpler to just "make clean" and then re-build.
+
+DESIGN
+   On paper the Intel 486 DX2-66 in that this code was originally
+   developed on was 4x quicker than a Sun 3/50.  So, the aim was to
+   start with a naive interpreter, see what the performance was like
+   in practice and based on how good/bad it was decide whether it was
+   possible to tune it to acceptable speed or whether it required
+   dropping down to assembly.  As noted above, the code never advanced
+   beyond the naitve interpreter state.  
+
+BUILD
+   $ make
+
+RUN
+   $ ./sun3 a.out
+
+   The simulator does not support passing command line arguments to
+   the binary.  If the program aborts with the message :-
+
+	sun3: not enough virtual memory
+
+   then you can up the amount of memory available to the simulator
+   with the -v option.  For example, the following runs the the Forth
+   interpreter (bin/forth) in a 256Kb memory :-
+
+	./sun3 -v262144 examples/forth
+
+CREATING SUITABLE BINARIES
+   The easiest way is to create the binaries on a Sun3 -- make sure
+   that the binaries are statically linked! -- but they were rare in
+   1995 and considerably rarer in 2013.  So, that leaves
+   cross-compilation/assembly and since I was only interested in
+   assembly programs then the following is how to do that ...
+
+   I've only used cross-compiled versions of GNU as and ld (called
+   "sun3-as" and "sun3-ld" respectively in the following).  For example,
+   the following shows how to assemble and link a simple program that
+   does a RAM test with these tools :-
+
+      $ sun3-as -mc68000 -l -o examples/ramtest.o examples/ramtest.s
+      $ sun3-ld -o examples/ramtest examples/ramtest.o
+
+   Note the use of the "-mc68000" and "-l" options by the assembler.
+   Without the first the assembler assumes that the target is a mc68020
+   which is not supported by the simulator.  Without the latter the
+   assembler may plant 32-bit displacements for unknown bsr destinations
+   rather than the 16-bit displacements required.
+
+   One program was used to do the vast majority of testing of the
+   simulator during its development: Andy Valencia's 68K Forth.  The
+   folowing shows how to assemble, link and run this program :-
+
+      $ sun3-as -mc68000 -l -o examples/forth.o examples/forth.s
+      $ sun3-as -mc68000 -l -o examples/libforth.o examples/libforth.s
+      $ sun3-ld -N -e init -o examples/forth examples/forth.o examples/m.o
+
+   The "-e init" option for the linker/loader is required because the
+   start point for the Forth interpreter is not at the start of the
+   assembly file and the start point does not have one of the standard
+   names (e.g. start or main).  The "-N" is needed because the Forth
+   interpreter needs to be able to write to the text segment.  If this
+   option is omitted the file is marked as a ZMAGIC file with a
+   read-only text segment and will abort with a BUSERROR if executed.
+
+TODO
+   * reduce the number of implementation dependencies.
+   * finish implementing all the instructions.
+   * calculate cycle counts for the executed instructions and provide an
+     option to display the total.
+
+BIBLIOGRAPHY
+   68000 Assembly Language: Techniques for Building Programs
+   Donald Krantz and James Stanley
+   Addison Wesley
+   1986
+   0-201-11659-6
+
+     This is the book I learnt 68000 programming from and also which I
+     used as the main reference in writing the simulator.  The book is
+     written in an informal style which I find entertaining as well as
+     informative.  The authors suggest that you get a MC68K reference
+     manual to acompany the book since they don't probe all the dark
+     corners.  Nevertheless I found chapter 9 entitled "The
+     Nitty-Gritty Details" which includes tables with the bit-patterns
+     for most instructions, addressing modes and suggestions on how to
+     decode the instructions (with a view to writing a disassembler)
+     was particularly valuable.  The main description of the
+     instructions is grouped by function not alphabetically --
+     probably the right choice for this type of book but a pain if you
+     don't have a reference manual, which I didn't until I got ...
+
+
+   The Motorola MC68000 Microprocessor Family: Assembly Language,
+   Interface Design, and System Design.
+   Thomas L. Harman and Barbara Lawson
+   Prentice-Hall
+   1985
+   0-13-603960-X
+
+     The one thing I needed that wasn't detailed in Kranz&Stanley's
+     book was precisely how the condition codes are set for the
+     various instructions e.g. it tells you that overflow is set by a
+     certain instruction but not how overflow is defined.  This book
+     is where I found the necessary information.  It also contains a
+     reasonably thorough description of how the arithmetic shift
+     instructions affect the flags.  This is the sort of book you want
+     if you are building some hardware with a 68K in it and you are
+     programming it from the ground up.  Includes a description of the
+     instruction set in alphabetical order which is useful for
+     reference.
+
+
+   High-Level Programmer's Guide to the 68000
+   Francis G. McCabe
+   Prentice-Hall
+   1992
+   0-13-388034-6
+
+     As the title suggests, this takes a higher level view than most
+     books on the 68000.  It concentrates on showing how constructs
+     from various high-level languages (mainly Pascal but some Lisp
+     and Prolog) can be represented in assembly.  I haven't read it in
+     detail since it didn't contain any material useful in writing 68K
+     simulators.  Looks like a good book for someone who knows some
+     high-level languages and wants to learn 68K assembly though (not
+     quite sure why anyone would want to learn 68K assembly in 1995
+     though :-)
+
+
+   Programming the M68000 (Second Edition)
+   Tim King and Brian Knight
+   Benjamin/Cummings
+   1987
+   0-8053-5550-2
+
+     This is where I found a decent explanation of what LEA does.  I
+     also used some of the code contained in the book as test programs
+     -- see examples/hanoi.s and examples/ramtest.s.
+
+
+   The Motorola MC68000: An introduction to procesor, memory and interfacing
+   Jean Bacon
+   Prentice-Hall
+   1986
+   0-13-604109-4
+
+     Introduces the MC68000 through the use of a single board computer
+     called the TUTOR.  Didn't refer to it in writing the simulators.
+     In the vein of Harman&Lawson but doesn't contain as much
+     information.
+
+
+   Assembly Language Programming for the 68000
+   Arthur Gill and Edward Corwin and Antonette Logar
+   Prentice-Hall
+   1987
+   0-13-049827-0
+
+     When purchasing my first 68K book I had a choice between this and
+     Kranz&Stanley and I chose the latter.  Looking back, this book is
+     not as bad as I first thought, but I'd still choose
+     Kranz&Stanley.  Some good points for beginners are discussions of
+     the two-pass assembly process, position independent code and
+     macros.  The intro notes that this book is not a standalone text,
+     it should be used along with a reference manual, since it does
+     not describe all the fine details of the 68000 instructions.
+
+
+   68000 Assembly Language Programming
+   Gerald Kane and Doug Hawkins and Lance Leventhal
+   Osborne/McGraw-Hill
+   1981
+   0-931988-62-4
+
+     I didn't get hold of this until I'd almost finished writing the
+     simulator which is a pity because this book contains some useful
+     appendices with the instruction set laid out in various orders.
+
+
+AUTHOR
+  Ninetes Retro <nineties-retro@mail.com>
+
+  6c342aeda4b95908f9e55b2fc8bbcb17c7422c46d549749d7d112e09207ce424

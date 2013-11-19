@@ -1,0 +1,3 @@
+sun3_word_instruction sun3_instr_subq_word;
+sun3_word_instruction sun3_instr_addq_word;
+void sun3_instr_addq_or_subq_word(sun3 *);
